@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Key Uploader</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --card: rgba(18, 24, 38, 0.85);
+      --border: rgba(255,255,255,0.08);
+      --primary: #8b5cf6;
+      --primary2: #6366f1;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% -10%, rgba(139,92,246,0.28), transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 90%, rgba(99,102,241,0.15), transparent 50%),
+        radial-gradient(ellipse 40% 30% at 10% 80%, rgba(168,85,247,0.1), transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+      animation: fadeUp 0.5s ease;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 14px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--primary), var(--primary2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 12px 30px rgba(139,92,246,0.4);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    h1 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 6px;
+    }
+
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.45);
+      animation: fadeUp 0.55s ease 0.05s both;
+    }
+
+    .drop {
+      border: 2px dashed rgba(139,92,246,0.4);
+      border-radius: 16px;
+      padding: 36px 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: rgba(139,92,246,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .drop::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(139,92,246,0.08), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .drop:hover, .drop.over {
+      border-color: var(--primary);
+      background: rgba(139,92,246,0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(139,92,246,0.15);
+    }
+
+    .drop:hover::after, .drop.over::after { opacity: 1; }
+
+    .drop svg {
+      width: 46px;
+      height: 46px;
+      color: var(--primary);
+      margin-bottom: 12px;
+      transition: transform 0.25s;
+    }
+
+    .drop:hover svg { transform: translateY(-3px); }
+
+    .drop h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .drop p {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    #fileInput { display: none; }
+
+    .file-row {
+      display: none;
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      font-size: 0.88rem;
+      color: #c4b5fd;
+      align-items: center;
+      gap: 10px;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .file-row.show { display: flex; }
+
+    .btn {
+      margin-top: 18px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 13px;
+      background: linear-gradient(135deg, var(--primary), var(--primary2));
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.22s;
+      font-family: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(139,92,246,0.4);
+    }
+
+    .btn:active:not(:disabled) { transform: translateY(0); }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn.loading { pointer-events: none; }
+
+    .progress {
+      display: none;
+      margin-top: 16px;
+      height: 5px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress.show { display: block; }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--primary2), #a78bfa);
+      background-size: 200% 100%;
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      animation: shimmer 1.5s linear infinite;
+    }
+
+    .result {
+      display: none;
+      margin-top: 18px;
+      padding: 16px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 14px;
+      text-align: left;
+      animation: fadeUp 0.35s ease;
+    }
+
+    .result.show { display: block; }
+
+    .result-title {
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .result a {
+      display: block;
+      background: rgba(0,0,0,0.25);
+      padding: 12px;
+      border-radius: 10px;
+      word-break: break-all;
+      font-size: 0.84rem;
+      color: #86efac;
+      text-decoration: none;
+      line-height: 1.45;
+      transition: background 0.15s;
+    }
+
+    .result a:hover { background: rgba(0,0,0,0.35); }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .actions button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .btn-copy {
+      border: 1px solid rgba(34,197,94,0.4);
+      background: transparent;
+      color: #86efac;
+    }
+
+    .btn-copy:hover { background: rgba(34,197,94,0.12); }
+
+    .btn-open {
+      border: none;
+      background: rgba(34,197,94,0.2);
+      color: #86efac;
+    }
+
+    .btn-open:hover { background: rgba(34,197,94,0.3); }
+
+    .error {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 12px;
+      color: #fca5a5;
+      font-size: 0.88rem;
+      animation: shake 0.4s ease;
+    }
+
+    .error.show { display: block; }
+
+    .footer {
+      text-align: center;
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      animation: fadeUp 0.6s ease 0.1s both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 12px 30px rgba(139,92,246,0.35); }
+      50% { box-shadow: 0 12px 40px rgba(139,92,246,0.55); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo">📤</div>
+      <h1>Key Uploader</h1>
+      <p class="sub">Upload file → dapat link langsung</p>
+    </div>
+
+    <div class="card">
+      <div class="drop" id="drop">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+        </svg>
+        <h3>Klik atau tarik file ke sini</h3>
+        <p>Maksimal 200 MB • Semua jenis file</p>
+      </div>
+
+      <input type="file" id="fileInput" />
+
+      <div class="file-row" id="fileRow">
+        <span>📎</span>
+        <span id="fileName"></span>
+      </div>
+
+      <button class="btn" id="btn" disabled>Upload Sekarang</button>
+
+      <div class="progress" id="progress">
+        <div class="bar" id="bar"></div>
+      </div>
+
+      <div class="result" id="result">
+        <div class="result-title">✅ Upload Berhasil</div>
+        <a id="link" href="#" target="_blank" rel="noopener"></a>
+        <div class="actions">
+          <button class="btn-copy" id="copyBtn">Salin Link</button>
+          <button class="btn-open" id="openBtn">Buka</button>
+        </div>
+      </div>
+
+      <div class="error" id="error"></div>
+    </div>
+
+    <p class="footer">Powered by Catbox</p>
+  </div>
+
+  <script>
+    const drop = document.getElementById('drop');
+    const input = document.getElementById('fileInput');
+    const btn = document.getElementById('btn');
+    const fileRow = document.getElementById('fileRow');
+    const fileName = document.getElementById('fileName');
+    const progress = document.getElementById('progress');
+    const bar = document.getElementById('bar');
+    const result = document.getElementById('result');
+    const linkEl = document.getElementById('link');
+    const copyBtn = document.getElementById('copyBtn');
+    const openBtn = document.getElementById('openBtn');
+    const errorEl = document.getElementById('error');
+
+    let selected = null;
+
+    drop.addEventListener('click', () => input.click());
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('over');
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', () => { if (input.files[0]) setFile(input.files[0]); });
+
+    function setFile(file) {
+      selected = file;
+      fileName.textContent = `\( {file.name} ( \){(file.size / 1024 / 1024).toFixed(2)} MB)`;
+      fileRow.classList.add('show');
+      btn.disabled = false;
+      result.classList.remove('show');
+      errorEl.classList.remove('show');
+    }
+
+    function showError(msg) {
+      errorEl.textContent = '❌ ' + msg;
+      errorEl.classList.add('show');
+    }
+
+    btn.addEventListener('click', async () => {
+      if (!selected) return;
+
+      btn.disabled = true;
+      btn.classList.add('loading');
+      btn.textContent = 'Mengupload...';
+      progress.classList.add('show');
+      bar.style.width = '20%';
+      result.classList.remove('show');
+      errorEl.classList.remove('show');
+
+      const fd = new FormData();
+      fd.append('file', selected);
+
+      try {
+        bar.style.width = '45%';
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: fd,
+        });
+
+        bar.style.width = '80%';
+        const data = await res.json();
+        bar.style.width = '100%';
+
+        if (!data.success) throw new Error(data.error || 'Upload gagal');
+
+        linkEl.href = data.url;
+        linkEl.textContent = data.url;
+        result.classList.add('show');
+      } catch (e) {
+        showError(e.message || 'Terjadi kesalahan');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btn.textContent = 'Upload Sekarang';
+        setTimeout(() => {
+          progress.classList.remove('show');
+          bar.style.width = '0%';
+        }, 500);
+      }
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(linkEl.href);
+        copyBtn.textContent = 'Tersalin!';
+        setTimeout(() => copyBtn.textContent = 'Salin Link', 1400);
+      } catch {
+        copyBtn.textContent = 'Gagal';
+      }
+    });
+
+    openBtn.addEventListener('click', () => {
+      window.open(linkEl.href, '_blank');
+    });
+  </script>
+</body>
+</html>
