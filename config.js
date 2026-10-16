@@ -1,0 +1,6 @@
+module.exports = {
+  BOT_TOKEN: process.env.BOT_TOKEN || '8491719217:AAF2hfCKBh9YEhi8RfEgz9u7rQmJe4kGno0',
+  OWNER_ID: [7217658286],
+  USERHASH: process.env.USERHASH || '700824b02661458ef396ff667',
+  MAX_FILE_SIZE: 200 * 1024 * 1024,
+};
